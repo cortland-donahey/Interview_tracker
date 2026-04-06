@@ -1,4 +1,4 @@
-import type { Candidate, InterviewQuestion, Job } from '@/types/domain'
+import type { Candidate, InterviewQuestion, Job, Skill } from '@/types/domain'
 
 export const STORAGE_KEY = 'interview-tracker:v1'
 
@@ -7,6 +7,7 @@ export interface PersistedV1 {
   jobs: Job[]
   candidates: Candidate[]
   questions: InterviewQuestion[]
+  skills: Skill[]
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -23,7 +24,8 @@ export function loadV1(): PersistedV1 | null {
     const jobs = Array.isArray(data.jobs) ? (data.jobs as Job[]) : []
     const candidates = Array.isArray(data.candidates) ? (data.candidates as Candidate[]) : []
     const questions = Array.isArray(data.questions) ? (data.questions as InterviewQuestion[]) : []
-    return { version: 1, jobs, candidates, questions }
+    const skills = Array.isArray(data.skills) ? (data.skills as Skill[]) : []
+    return { version: 1, jobs, candidates, questions, skills }
   } catch {
     return null
   }

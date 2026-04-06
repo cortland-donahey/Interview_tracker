@@ -38,3 +38,15 @@ export interface InterviewQuestion {
   createdAt: string
   updatedAt: string
 }
+
+export interface Skill {
+  id: string
+  name: string
+  category: 'technical' | 'soft' | 'other'
+  priority: 'must-have' | 'nice-to-have'
+  weight: number
+  description?: string
+  tags?: string[]
+  createdAt: string
+  updatedAt: string
+}
