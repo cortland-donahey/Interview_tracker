@@ -20,13 +20,21 @@ export const useJobsStore = defineStore('jobs', {
     },
   },
   actions: {
-    add(input: { title: string; company?: string; description: string }) {
+    add(input: {
+      title: string
+      reqId: string
+      postedDate?: string
+      descriptionFileName?: string
+      descriptionFileData?: string
+    }) {
       const t = nowIso()
       const job: Job = {
         id: newId(),
         title: input.title.trim(),
-        company: input.company?.trim() || undefined,
-        description: input.description,
+        reqId: input.reqId.trim(),
+        postedDate: input.postedDate || undefined,
+        descriptionFileName: input.descriptionFileName || undefined,
+        descriptionFileData: input.descriptionFileData || undefined,
         createdAt: t,
         updatedAt: t,
       }
@@ -35,14 +43,15 @@ export const useJobsStore = defineStore('jobs', {
     },
     update(
       id: string,
-      patch: Partial<Pick<Job, 'title' | 'company' | 'description'>>,
+      patch: Partial<Pick<Job, 'title' | 'reqId' | 'postedDate' | 'descriptionFileName' | 'descriptionFileData'>>,
     ) {
       const job = this.jobs.find((j) => j.id === id)
       if (!job) return
       if (patch.title !== undefined) job.title = patch.title.trim()
-      if (patch.company !== undefined)
-        job.company = patch.company.trim() || undefined
-      if (patch.description !== undefined) job.description = patch.description
+      if (patch.reqId !== undefined) job.reqId = patch.reqId.trim()
+      if ('postedDate' in patch) job.postedDate = patch.postedDate || undefined
+      if ('descriptionFileName' in patch) job.descriptionFileName = patch.descriptionFileName || undefined
+      if ('descriptionFileData' in patch) job.descriptionFileData = patch.descriptionFileData || undefined
       job.updatedAt = nowIso()
     },
     remove(id: string) {

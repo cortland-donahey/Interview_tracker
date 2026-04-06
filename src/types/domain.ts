@@ -11,8 +11,10 @@ export type CandidateStatus =
 export interface Job {
   id: string
   title: string
-  company?: string
-  description: string
+  reqId: string
+  postedDate?: string
+  descriptionFileName?: string
+  descriptionFileData?: string
   createdAt: string
   updatedAt: string
 }

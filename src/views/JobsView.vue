@@ -12,8 +12,10 @@ const candidatesStore = useCandidatesStore()
 const modalOpen = ref(false)
 const editingId = ref<string | null>(null)
 const formTitle = ref('')
-const formCompany = ref('')
-const formDescription = ref('')
+const formReqId = ref('')
+const formPostedDate = ref('')
+const formDescriptionFileName = ref('')
+const formDescriptionFileData = ref('')
 const deleteError = ref('')
 
 const sortedJobs = computed(() => jobsStore.sortedByUpdated)
@@ -21,8 +23,10 @@ const sortedJobs = computed(() => jobsStore.sortedByUpdated)
 function openCreate() {
   editingId.value = null
   formTitle.value = ''
-  formCompany.value = ''
-  formDescription.value = ''
+  formReqId.value = ''
+  formPostedDate.value = ''
+  formDescriptionFileName.value = ''
+  formDescriptionFileData.value = ''
   deleteError.value = ''
   modalOpen.value = true
 }
@@ -30,10 +34,30 @@ function openCreate() {
 function openEdit(job: Job) {
   editingId.value = job.id
   formTitle.value = job.title
-  formCompany.value = job.company ?? ''
-  formDescription.value = job.description
+  formReqId.value = job.reqId
+  formPostedDate.value = job.postedDate ?? ''
+  formDescriptionFileName.value = job.descriptionFileName ?? ''
+  formDescriptionFileData.value = job.descriptionFileData ?? ''
   deleteError.value = ''
   modalOpen.value = true
+}
+
+function onFileChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  formDescriptionFileName.value = file.name
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    formDescriptionFileData.value = (e.target?.result as string) ?? ''
+  }
+  reader.readAsDataURL(file)
+}
+
+function clearFile() {
+  formDescriptionFileName.value = ''
+  formDescriptionFileData.value = ''
+  const input = document.getElementById('job-desc-file') as HTMLInputElement | null
+  if (input) input.value = ''
 }
 
 function closeModal() {
@@ -42,18 +66,23 @@ function closeModal() {
 
 function save() {
   const title = formTitle.value.trim()
-  if (!title) return
+  const reqId = formReqId.value.trim()
+  if (!title || !reqId) return
   if (editingId.value) {
     jobsStore.update(editingId.value, {
       title,
-      company: formCompany.value,
-      description: formDescription.value,
+      reqId,
+      postedDate: formPostedDate.value || undefined,
+      descriptionFileName: formDescriptionFileName.value || undefined,
+      descriptionFileData: formDescriptionFileData.value || undefined,
     })
   } else {
     jobsStore.add({
       title,
-      company: formCompany.value || undefined,
-      description: formDescription.value,
+      reqId,
+      postedDate: formPostedDate.value || undefined,
+      descriptionFileName: formDescriptionFileName.value || undefined,
+      descriptionFileData: formDescriptionFileData.value || undefined,
     })
   }
   closeModal()
@@ -128,14 +157,26 @@ watch(modalOpen, (open) => {
             <h3 class="font-semibold text-slate-900">
               {{ job.title }}
             </h3>
+            <p class="text-sm text-slate-500">
+              Req ID: {{ job.reqId }}
+            </p>
             <p
-              v-if="job.company"
+              v-if="job.postedDate"
               class="text-sm text-slate-500"
             >
-              {{ job.company }}
+              Posted: {{ job.postedDate }}
             </p>
-            <p class="whitespace-pre-wrap text-sm text-slate-700 line-clamp-3">
-              {{ job.description || '—' }}
+            <p
+              v-if="job.descriptionFileName"
+              class="text-sm text-slate-700"
+            >
+              {{ job.descriptionFileName }}
+            </p>
+            <p
+              v-else
+              class="text-sm text-slate-400"
+            >
+              No description uploaded
             </p>
             <p class="text-xs text-slate-500">
               {{ candidateCount(job.id) }} candidate(s)
@@ -177,35 +218,61 @@ watch(modalOpen, (open) => {
             v-model="formTitle"
             type="text"
             class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-            autocomplete="organization-title"
+            autocomplete="off"
             required
           >
         </div>
         <div>
           <label
-            for="job-company"
+            for="job-req-id"
             class="mb-1 block text-sm font-medium text-slate-700"
-          >Company</label>
+          >Req ID <span class="text-red-600">*</span></label>
           <input
-            id="job-company"
-            v-model="formCompany"
+            id="job-req-id"
+            v-model="formReqId"
             type="text"
             class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-            autocomplete="organization"
+            autocomplete="off"
+            required
           >
         </div>
         <div>
           <label
-            for="job-desc"
+            for="job-posted-date"
             class="mb-1 block text-sm font-medium text-slate-700"
-          >Description</label>
-          <textarea
-            id="job-desc"
-            v-model="formDescription"
-            rows="8"
-            class="w-full resize-y rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-            placeholder="Paste or write the job description…"
-          />
+          >Posted Date</label>
+          <input
+            id="job-posted-date"
+            v-model="formPostedDate"
+            type="date"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
+          >
+        </div>
+        <div>
+          <label
+            for="job-desc-file"
+            class="mb-1 block text-sm font-medium text-slate-700"
+          >Job Description</label>
+          <input
+            id="job-desc-file"
+            type="file"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2 file:mr-3 file:rounded file:border-0 file:bg-indigo-50 file:px-3 file:py-1 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+            @change="onFileChange"
+          >
+          <div
+            v-if="formDescriptionFileName"
+            class="mt-2 flex items-center gap-2 text-sm text-slate-600"
+          >
+            <span class="truncate">{{ formDescriptionFileName }}</span>
+            <button
+              type="button"
+              class="shrink-0 text-xs text-red-600 hover:underline"
+              @click="clearFile"
+            >
+              Remove
+            </button>
+          </div>
         </div>
       </div>
       <template #footer>
@@ -219,7 +286,7 @@ watch(modalOpen, (open) => {
         <button
           type="button"
           class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-          :disabled="!formTitle.trim()"
+          :disabled="!formTitle.trim() || !formReqId.trim()"
           @click="save"
         >
           Save
