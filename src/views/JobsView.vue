@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import AppModal from '@/components/AppModal.vue'
 import { useCandidatesStore } from '@/stores/candidates'
 import { useJobsStore } from '@/stores/jobs'
+import { useSkillsStore } from '@/stores/skills'
 import type { Job } from '@/types/domain'
 
 const jobsStore = useJobsStore()
 const candidatesStore = useCandidatesStore()
+const skillsStore = useSkillsStore()
 
 const modalOpen = ref(false)
 const editingId = ref<string | null>(null)
@@ -16,7 +19,40 @@ const formReqId = ref('')
 const formPostedDate = ref('')
 const formDescriptionFileName = ref('')
 const formDescriptionFileData = ref('')
+const formSkillIds = ref<string[]>([])
+const skillSearch = ref('')
+const skillDropdownOpen = ref(false)
 const deleteError = ref('')
+
+const skillSuggestions = computed(() => {
+  const q = skillSearch.value.trim().toLowerCase()
+  return skillsStore.sortedByUpdated.filter(
+    (s) => !formSkillIds.value.includes(s.id) && (!q || s.name.toLowerCase().includes(q)),
+  )
+})
+
+function skillName(id: string) {
+  return skillsStore.getById(id)?.name ?? id
+}
+
+function skillCategory(id: string) {
+  return skillsStore.getById(id)?.category ?? ''
+}
+
+function addSkill(id: string) {
+  if (!formSkillIds.value.includes(id)) formSkillIds.value.push(id)
+  skillSearch.value = ''
+  skillDropdownOpen.value = false
+}
+
+function removeSkill(id: string) {
+  formSkillIds.value = formSkillIds.value.filter((x) => x !== id)
+}
+
+function onSkillBlur() {
+  // defer so @mousedown.prevent on list items fires first
+  setTimeout(() => { skillDropdownOpen.value = false }, 120)
+}
 
 const sortedJobs = computed(() => jobsStore.sortedByUpdated)
 
@@ -27,6 +63,8 @@ function openCreate() {
   formPostedDate.value = ''
   formDescriptionFileName.value = ''
   formDescriptionFileData.value = ''
+  formSkillIds.value = []
+  skillSearch.value = ''
   deleteError.value = ''
   modalOpen.value = true
 }
@@ -38,6 +76,8 @@ function openEdit(job: Job) {
   formPostedDate.value = job.postedDate ?? ''
   formDescriptionFileName.value = job.descriptionFileName ?? ''
   formDescriptionFileData.value = job.descriptionFileData ?? ''
+  formSkillIds.value = job.skillIds ? [...job.skillIds] : []
+  skillSearch.value = ''
   deleteError.value = ''
   modalOpen.value = true
 }
@@ -75,6 +115,7 @@ function save() {
       postedDate: formPostedDate.value || undefined,
       descriptionFileName: formDescriptionFileName.value || undefined,
       descriptionFileData: formDescriptionFileData.value || undefined,
+      skillIds: formSkillIds.value.length ? formSkillIds.value : undefined,
     })
   } else {
     jobsStore.add({
@@ -83,6 +124,7 @@ function save() {
       postedDate: formPostedDate.value || undefined,
       descriptionFileName: formDescriptionFileName.value || undefined,
       descriptionFileData: formDescriptionFileData.value || undefined,
+      skillIds: formSkillIds.value.length ? formSkillIds.value : undefined,
     })
   }
   closeModal()
@@ -178,6 +220,23 @@ watch(modalOpen, (open) => {
             >
               No description uploaded
             </p>
+            <div
+              v-if="job.skillIds?.length"
+              class="flex flex-wrap gap-1.5"
+            >
+              <span
+                v-for="sid in job.skillIds"
+                :key="sid"
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+                :class="{
+                  'bg-blue-50 text-blue-800': skillCategory(sid) === 'technical',
+                  'bg-emerald-50 text-emerald-800': skillCategory(sid) === 'soft',
+                  'bg-slate-100 text-slate-700': skillCategory(sid) === 'other',
+                }"
+              >
+                {{ skillName(sid) }}
+              </span>
+            </div>
             <p class="text-xs text-slate-500">
               {{ candidateCount(job.id) }} candidate(s)
             </p>
@@ -273,6 +332,85 @@ watch(modalOpen, (open) => {
               Remove
             </button>
           </div>
+        </div>
+        <!-- skill picker -->
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Skills</label>
+          <p class="mb-2 text-xs text-slate-500">
+            Select from skills defined in the
+            <RouterLink
+              to="/skills"
+              class="text-indigo-600 hover:underline"
+            >
+              Skills section
+            </RouterLink>.
+          </p>
+          <!-- no skills defined at all -->
+          <p
+            v-if="skillsStore.skills.length === 0"
+            class="rounded-lg border border-dashed border-slate-200 px-3 py-2 text-sm text-slate-400"
+          >
+            No skills defined yet. Go to the Skills section to add some.
+          </p>
+          <template v-else>
+            <!-- selected chips -->
+            <div
+              v-if="formSkillIds.length"
+              class="mb-2 flex flex-wrap gap-1.5"
+            >
+              <span
+                v-for="sid in formSkillIds"
+                :key="sid"
+                class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                :class="{
+                  'bg-blue-100 text-blue-800': skillCategory(sid) === 'technical',
+                  'bg-emerald-100 text-emerald-800': skillCategory(sid) === 'soft',
+                  'bg-slate-200 text-slate-700': skillCategory(sid) === 'other',
+                }"
+              >
+                {{ skillName(sid) }}
+                <button
+                  type="button"
+                  class="ml-0.5 rounded-full hover:opacity-70"
+                  aria-label="Remove skill"
+                  @click="removeSkill(sid)"
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+            <!-- search input + suggestions -->
+            <input
+              v-model="skillSearch"
+              type="text"
+              placeholder="Type to search skills…"
+              class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
+              autocomplete="off"
+              @focus="skillDropdownOpen = true"
+              @input="skillDropdownOpen = true"
+              @blur="onSkillBlur"
+            >
+            <ul
+              v-if="skillDropdownOpen && skillSuggestions.length > 0"
+              class="mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <li
+                v-for="s in skillSuggestions"
+                :key="s.id"
+                class="flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-indigo-50"
+                @mousedown.prevent="addSkill(s.id)"
+              >
+                <span class="font-medium text-slate-800">{{ s.name }}</span>
+                <span class="ml-3 shrink-0 text-xs text-slate-400">{{ s.category }} · w{{ s.weight }}</span>
+              </li>
+            </ul>
+            <p
+              v-else-if="skillDropdownOpen && skillSearch.trim() && skillSuggestions.length === 0"
+              class="mt-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500"
+            >
+              No matching skills found.
+            </p>
+          </template>
         </div>
       </div>
       <template #footer>

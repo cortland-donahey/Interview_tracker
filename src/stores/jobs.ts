@@ -26,6 +26,7 @@ export const useJobsStore = defineStore('jobs', {
       postedDate?: string
       descriptionFileName?: string
       descriptionFileData?: string
+      skillIds?: string[]
     }) {
       const t = nowIso()
       const job: Job = {
@@ -35,6 +36,7 @@ export const useJobsStore = defineStore('jobs', {
         postedDate: input.postedDate || undefined,
         descriptionFileName: input.descriptionFileName || undefined,
         descriptionFileData: input.descriptionFileData || undefined,
+        skillIds: input.skillIds?.length ? input.skillIds : undefined,
         createdAt: t,
         updatedAt: t,
       }
@@ -43,7 +45,7 @@ export const useJobsStore = defineStore('jobs', {
     },
     update(
       id: string,
-      patch: Partial<Pick<Job, 'title' | 'reqId' | 'postedDate' | 'descriptionFileName' | 'descriptionFileData'>>,
+      patch: Partial<Pick<Job, 'title' | 'reqId' | 'postedDate' | 'descriptionFileName' | 'descriptionFileData' | 'skillIds'>>,
     ) {
       const job = this.jobs.find((j) => j.id === id)
       if (!job) return
@@ -52,6 +54,7 @@ export const useJobsStore = defineStore('jobs', {
       if ('postedDate' in patch) job.postedDate = patch.postedDate || undefined
       if ('descriptionFileName' in patch) job.descriptionFileName = patch.descriptionFileName || undefined
       if ('descriptionFileData' in patch) job.descriptionFileData = patch.descriptionFileData || undefined
+      if ('skillIds' in patch) job.skillIds = patch.skillIds?.length ? patch.skillIds : undefined
       job.updatedAt = nowIso()
     },
     remove(id: string) {

@@ -15,6 +15,7 @@ export interface Job {
   postedDate?: string
   descriptionFileName?: string
   descriptionFileData?: string
+  skillIds?: string[]
   createdAt: string
   updatedAt: string
 }
