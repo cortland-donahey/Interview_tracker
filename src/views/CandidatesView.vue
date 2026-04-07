@@ -2,27 +2,40 @@
 import { computed, ref } from 'vue'
 
 import AppModal from '@/components/AppModal.vue'
-import {
-  CANDIDATE_STATUSES,
-  CANDIDATE_STATUS_LABELS,
-} from '@/constants/candidateStatus'
 import { useCandidatesStore } from '@/stores/candidates'
 import { useJobsStore } from '@/stores/jobs'
-import type { Candidate, CandidateStatus } from '@/types/domain'
+import { useStatusConfigStore } from '@/stores/statusConfig'
+import type { Candidate } from '@/types/domain'
 
 const jobsStore = useJobsStore()
 const candidatesStore = useCandidatesStore()
+const statusConfigStore = useStatusConfigStore()
 
 const filterJobId = ref<string>('')
-const filterStatus = ref<CandidateStatus | ''>('')
+const filterStatus = ref<string>('')
 
 const modalOpen = ref(false)
 const editingId = ref<string | null>(null)
 const formJobId = ref('')
 const formName = ref('')
 const formEmail = ref('')
-const formStatus = ref<CandidateStatus>('applied')
+const formStatus = ref<string>('')
 const formNotes = ref('')
+
+const STATUS_PALETTE = [
+  'bg-slate-100 text-slate-800',
+  'bg-blue-100 text-blue-800',
+  'bg-violet-100 text-violet-800',
+  'bg-indigo-100 text-indigo-800',
+  'bg-amber-100 text-amber-900',
+  'bg-emerald-100 text-emerald-800',
+  'bg-red-100 text-red-800',
+  'bg-orange-100 text-orange-800',
+  'bg-slate-200 text-slate-700',
+  'bg-pink-100 text-pink-800',
+  'bg-teal-100 text-teal-800',
+  'bg-cyan-100 text-cyan-800',
+]
 
 const sortedJobs = computed(() => jobsStore.sortedByUpdated)
 
@@ -39,18 +52,13 @@ function jobTitle(jobId: string) {
   return jobsStore.getById(jobId)?.title ?? '(unknown job)'
 }
 
-function statusClass(status: CandidateStatus): string {
-  const map: Record<CandidateStatus, string> = {
-    applied: 'bg-slate-100 text-slate-800',
-    screening: 'bg-blue-100 text-blue-800',
-    phone: 'bg-violet-100 text-violet-800',
-    onsite: 'bg-indigo-100 text-indigo-800',
-    offer: 'bg-amber-100 text-amber-900',
-    hired: 'bg-emerald-100 text-emerald-800',
-    rejected: 'bg-red-100 text-red-800',
-    withdrawn: 'bg-slate-200 text-slate-700',
-  }
-  return map[status]
+function statusClass(statusId: string): string {
+  const idx = statusConfigStore.sorted.findIndex((s) => s.id === statusId)
+  return STATUS_PALETTE[idx >= 0 ? idx % STATUS_PALETTE.length : 0]
+}
+
+function statusLabel(statusId: string): string {
+  return statusConfigStore.labelMap[statusId] ?? statusId
 }
 
 function openCreate() {
@@ -58,7 +66,7 @@ function openCreate() {
   formJobId.value = sortedJobs.value[0]?.id ?? ''
   formName.value = ''
   formEmail.value = ''
-  formStatus.value = 'applied'
+  formStatus.value = statusConfigStore.sorted[0]?.id ?? ''
   formNotes.value = ''
   modalOpen.value = true
 }
@@ -172,11 +180,11 @@ function remove(c: Candidate) {
               All statuses
             </option>
             <option
-              v-for="s in CANDIDATE_STATUSES"
-              :key="s"
-              :value="s"
+              v-for="s in statusConfigStore.sorted"
+              :key="s.id"
+              :value="s.id"
             >
-              {{ CANDIDATE_STATUS_LABELS[s] }}
+              {{ s.label }}
             </option>
           </select>
         </div>
@@ -250,7 +258,7 @@ function remove(c: Candidate) {
                 <span
                   class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
                   :class="statusClass(c.status)"
-                >{{ CANDIDATE_STATUS_LABELS[c.status] }}</span>
+                >{{ statusLabel(c.status) }}</span>
               </td>
               <td class="px-4 py-3 text-slate-600">
                 {{ c.email || '—' }}
@@ -349,11 +357,11 @@ function remove(c: Candidate) {
             class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
           >
             <option
-              v-for="s in CANDIDATE_STATUSES"
-              :key="s"
-              :value="s"
+              v-for="s in statusConfigStore.sorted"
+              :key="s.id"
+              :value="s.id"
             >
-              {{ CANDIDATE_STATUS_LABELS[s] }}
+              {{ s.label }}
             </option>
           </select>
         </div>

@@ -1,12 +1,11 @@
-export type CandidateStatus =
-  | 'applied'
-  | 'screening'
-  | 'phone'
-  | 'onsite'
-  | 'offer'
-  | 'hired'
-  | 'rejected'
-  | 'withdrawn'
+export type CandidateStatus = string
+
+export interface CandidateStatusConfig {
+  id: string
+  label: string
+  description?: string
+  order: number
+}
 
 export interface Job {
   id: string

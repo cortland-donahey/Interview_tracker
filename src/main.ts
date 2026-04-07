@@ -10,6 +10,7 @@ import { useCandidatesStore } from './stores/candidates'
 import { useJobsStore } from './stores/jobs'
 import { useQuestionsStore } from './stores/questions'
 import { useSkillsStore } from './stores/skills'
+import { useStatusConfigStore } from './stores/statusConfig'
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -21,6 +22,7 @@ const jobsStore = useJobsStore()
 const candidatesStore = useCandidatesStore()
 const questionsStore = useQuestionsStore()
 const skillsStore = useSkillsStore()
+const statusConfigStore = useStatusConfigStore()
 
 const loaded = loadV1()
 if (loaded) {
@@ -28,6 +30,9 @@ if (loaded) {
   candidatesStore.$patch({ candidates: loaded.candidates })
   questionsStore.$patch({ questions: loaded.questions })
   skillsStore.$patch({ skills: loaded.skills })
+  if (loaded.statuses.length) {
+    statusConfigStore.$patch({ statuses: loaded.statuses })
+  }
 }
 
 watch(
@@ -36,6 +41,7 @@ watch(
     candidates: candidatesStore.candidates,
     questions: questionsStore.questions,
     skills: skillsStore.skills,
+    statuses: statusConfigStore.statuses,
   }),
   (state) => {
     saveV1({
@@ -44,6 +50,7 @@ watch(
       candidates: state.candidates,
       questions: state.questions,
       skills: state.skills,
+      statuses: state.statuses,
     })
   },
   { deep: true },

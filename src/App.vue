@@ -40,20 +40,12 @@ import { RouterLink, RouterView } from 'vue-router'
             Candidates
           </RouterLink>
           <RouterLink
-            to="/questions"
+            to="/configuration"
             class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
             active-class="bg-indigo-600 text-white"
             inactive-class="bg-slate-100 text-slate-700 hover:bg-slate-200"
           >
-            Questions
-          </RouterLink>
-          <RouterLink
-            to="/skills"
-            class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
-            active-class="bg-indigo-600 text-white"
-            inactive-class="bg-slate-100 text-slate-700 hover:bg-slate-200"
-          >
-            Skills
+            Configuration
           </RouterLink>
         </nav>
       </div>
