@@ -47,3 +47,7 @@ npm run lint
 - TypeScript, Vite
 - Vue Router, Pinia
 - Tailwind CSS v4 (`@tailwindcss/vite`)
+
+## Future upgrades
+- Persist to database POSTGRE
+- Serverless
